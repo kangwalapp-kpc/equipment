@@ -221,24 +221,28 @@
                 </div>
 
                 <div id="editMode" class="hidden animate-fadeIn mb-4">
-                    <h3 class="text-orange-600 font-bold mb-3"><i class="fas fa-edit"></i> แก้ไขข้อมูล</h3>
-                    <label class="text-[10px] text-gray-400 uppercase font-bold">ชื่ออุปกรณ์</label>
-                    <input type="text" id="editNameInput" class="w-full border-b-2 border-orange-200 py-2 mb-4 outline-none focus:border-orange-500 font-bold text-lg transition-all">
-                    
-                    <label class="text-[10px] text-gray-400 uppercase font-bold">รูปภาพอุปกรณ์</label>
-                    <div class="flex items-center gap-2 mb-4 mt-1">
-                        <label class="flex-1 flex items-center justify-center gap-2 bg-gray-100 text-gray-600 py-3 rounded-xl cursor-pointer hover:bg-gray-200 transition-all border-2 border-dashed border-gray-300">
-                            <i class="fas fa-camera"></i>
-                            <span id="fileNameDisplay" class="text-xs font-bold">เลือกรูปใหม่</span>
-                            <input type="file" id="editImgFile" accept="image/*" class="hidden" onchange="previewFileName(this)">
-                        </label>
-                    </div>
-                    <div class="flex gap-2">
+    <h3 class="text-orange-600 font-bold mb-3"><i class="fas fa-edit"></i> แก้ไขข้อมูล</h3>
+    
+    <label class="text-[10px] text-gray-400 uppercase font-bold">ชื่ออุปกรณ์</label>
+    <input type="text" id="editNameInput" class="w-full border-b-2 border-orange-200 py-2 mb-4 outline-none focus:border-orange-500 font-bold text-lg transition-all">
+    
+    <label class="text-[10px] text-gray-400 uppercase font-bold">รายละเอียดเพิ่มเติม</label>
+    <textarea id="editDescInput" rows="3" class="w-full border-2 border-orange-100 rounded-xl p-2 mb-4 outline-none focus:border-orange-500 text-sm transition-all resize-none" placeholder="ระบุรายละเอียด..."></textarea>
+
+    <label class="text-[10px] text-gray-400 uppercase font-bold">รูปภาพอุปกรณ์</label>
+    <div class="flex items-center gap-2 mb-4 mt-1">
+        <label class="flex-1 flex items-center justify-center gap-2 bg-gray-100 text-gray-600 py-3 rounded-xl cursor-pointer hover:bg-gray-200 transition-all border-2 border-dashed border-gray-300">
+            <i class="fas fa-camera"></i>
+            <span id="fileNameDisplay" class="text-xs font-bold">เลือกรูปใหม่</span>
+            <input type="file" id="editImgFile" accept="image/*" class="hidden" onchange="previewFileName(this)">
+        </label>
+      <div class="flex gap-2">
                         <button onclick="saveEdit()" class="flex-1 bg-orange-500 text-white py-2 rounded-xl font-bold">บันทึก</button>
                         <button onclick="toggleEditMode(false)" class="flex-1 bg-gray-100 text-gray-500 py-2 rounded-xl">ยกเลิก</button>
+    </div>
+</div>          
                     </div>
                 </div>
-
                 <div id="stockControl" class="flex items-center justify-between bg-gray-50 p-4 rounded-2xl mb-6">
                     <div>
                         <span class="text-xs text-gray-500 block">คงเหลือ</span>
@@ -391,31 +395,30 @@ async function loadData() {
         const json = await res.json();
         data = json.map(item => ({
             title: item.name || "-",
-            // เปลี่ยนจาก getDriveImageUrl เป็น getImageUrl
             img: getImageUrl(item.img), 
             category: item.category || "อื่นๆ",
             qty: Number(item.qty) || 0,
-            assetInfo: item.section || "-", 
+            
+            // แก้ไขบรรทัดนี้จาก item.section เป็น item.assetInfo
+            assetInfo: item.assetInfo || "-",  
+            
             desc: item.remark || "",
             id: item.id
         }));
-      data.sort((a, b) => {
-        return String(a.category).localeCompare(String(b.category), undefined, { numeric: true });
-    });
+
+        // ส่วนที่เหลือคงเดิม...
+        data.sort((a, b) => {
+            return String(a.category).localeCompare(String(b.category), undefined, { numeric: true });
+        });
+        
         const categories = ["All", ...new Set(data.map(i => i.category))];
-
         renderCategoryButtons(categories);
-
         if (!categories.includes(currentFilter)) currentFilter = "All";
-
         filterData(currentFilter);
 
     } catch (error) {
-
         container.innerHTML = "<p class='text-center p-10 text-red-500'>โหลดข้อมูลไม่สำเร็จ</p>";
-
     }
-
 }
 
 function openEditMode() {
@@ -460,7 +463,7 @@ function filterData(selectedCat) {
         container.appendChild(card);
     });
 }
-// แก้ไขฟังก์ชัน toggleEditMode เป็นแบบนี้:
+// แก้ไขฟังก์ชัน toggleEditMode 
 function toggleEditMode(isEdit) {
     document.getElementById('viewMode').classList.toggle('hidden', isEdit);
     document.getElementById('editMode').classList.toggle('hidden', !isEdit);
@@ -468,32 +471,32 @@ function toggleEditMode(isEdit) {
     document.getElementById('actionButtons').classList.toggle('hidden', isEdit);
     
     if (isEdit) {
-        // ดึงชื่อเดิมมาใส่ในช่องกรอกชื่อ
+        // ดึงชื่อเดิม
         document.getElementById('editNameInput').value = currentItemData.title;
-      if(document.getElementById('editAssetInfoInput')) {
-        document.getElementById('editAssetInfoInput').value = currentItemData.assetInfo;
-    }
         
-        // ส่วนของรูปภาพ: เนื่องจากเป็น <input type="file"> เราไม่สามารถใส่ค่า URL เดิมลงไปได้
-        // ให้ลบบรรทัดที่อ้างถึง editImgInput ออก หรือเขียนกันไว้แบบนี้:
+        // ดึงรายละเอียดเดิม (ใช้ ID ใหม่ที่เราเพิ่งเพิ่มใน HTML)
+        if(document.getElementById('editDescInput')) {
+            document.getElementById('editDescInput').value = currentItemData.desc || "";
+        }
+
+        // ดึงข้อมูล Asset Info (ถ้ามี)
+        if(document.getElementById('editAssetInfoInput')) {
+            document.getElementById('editAssetInfoInput').value = currentItemData.assetInfo;
+        }
+        
         const fileDisplay = document.getElementById('fileNameDisplay');
         if (fileDisplay) fileDisplay.innerText = "เลือกรูปใหม่";
     }
 }
-function previewFileName(input) {
-    const fileName = input.files[0] ? input.files[0].name : "เลือกรูปใหม่";
-    document.getElementById('fileNameDisplay').innerText = fileName;
-}
-// ฟังก์ชันบันทึกข้อมูลที่แก้ (ชื่อและรูป)
 async function saveEdit() {
     const newName = document.getElementById('editNameInput').value;
+    const newDesc = document.getElementById('editDescInput').value; // ดึงค่ารายละเอียดใหม่
     const newAssetInfo = document.getElementById('editAssetInfoInput') ? document.getElementById('editAssetInfoInput').value : "";
     const fileInput = document.getElementById('editImgFile');
     const file = fileInput.files[0];
 
     if (!newName) return alert("กรุณาใส่ชื่ออุปกรณ์");
 
-    // 1. แสดง Toast ค้างไว้ (ใส่ 0 เพื่อไม่ให้หายไปเองจนกว่าจะบันทึกเสร็จ)
     showToast("กำลังบันทึกข้อมูล...", 0); 
     
     let base64Data = "";
@@ -501,7 +504,6 @@ async function saveEdit() {
 
     try {
         if (file) {
-            // ถ้ารูปมีขนาดใหญ่ ขั้นตอนนี้อาจใช้เวลาเล็กน้อย Toast จะช่วยบอก User ว่าระบบกำลังทำงาน
             base64Data = await resizeImage(file, 500); 
             fileName = file.name;
         }
@@ -511,6 +513,7 @@ async function saveEdit() {
             id: currentItemData.id,
             name: newName,
             assetInfo: newAssetInfo,
+            remark: newDesc, // ส่งค่ารายละเอียด (Remark) ไปยัง Apps Script
             imageDate: base64Data, 
             imageName: fileName
         };
@@ -523,14 +526,11 @@ async function saveEdit() {
         const resultText = await res.text();
 
         if (resultText.toLowerCase().includes("success")) {
-            // 2. เมื่อสำเร็จ เปลี่ยนข้อความและตั้งเวลาปิด (เช่น 2 วินาที)
             showToast("✅ อัปเดตข้อมูลเรียบร้อยแล้ว", 2000);
-            
             toggleEditMode(false);
             closeModal();
             loadData(); 
         } else {
-            // หากไม่สำเร็จ ให้ซ่อน Toast ทันทีเพื่อให้ User เห็น Alert ชัดเจน
             hideToast(); 
             alert("บันทึกไม่สำเร็จ: " + resultText);
         }
@@ -539,7 +539,6 @@ async function saveEdit() {
         alert("เกิดข้อผิดพลาด: " + e.message);
     }
 }
-// ฟังก์ชันช่วยลดขนาดรูปภาพก่อนส่ง
 function resizeImage(file, maxSide = 400) { // เปลี่ยนเป็นคุมด้านที่ยาวที่สุด
     return new Promise((resolve) => {
         const reader = new FileReader();
@@ -754,42 +753,49 @@ function renderFilteredItems(items) {
 
     items.forEach(item => {
         const card = document.createElement('div');
-        // เพิ่มเงื่อนไขเช็ค View (Grid/List) ให้ทำงานร่วมกันได้
         card.className = currentView === 'grid' 
             ? "card bg-white border rounded-xl overflow-hidden shadow-sm animate-fadeIn cursor-pointer"
             : "card bg-white border rounded-xl overflow-hidden shadow-sm animate-fadeIn cursor-pointer flex p-2 gap-3";
             
         card.onclick = () => openModal(item.id);
         
-        // ปรับ HTML ภายในการ์ดให้รองรับทั้ง Grid และ List
         if (currentView === 'grid') {
             card.innerHTML = `
-    <div class="image-container">
-        <div class="badge-box">
-            <i class="fas fa-box"></i> ${item.category}
-        </div>
-        
-        <img src="${item.img}" class="card-img" onerror="this.src='https://placehold.co/200x200?text=No+Image'">
-        <div class="badge-reserve">${item.qty} ชิ้น</div>
-    </div>
-    <div class="p-2 text-center">
-        <h3 class="font-bold text-[10px] truncate text-gray-800">${item.title}</h3>
-    </div>
-`;
+                <div class="image-container relative">
+                    <div class="badge-box">
+                        <i class="fas fa-box"></i> ${item.category}
+                    </div>
+
+                    <div class="absolute top-0 right-0 bg-orange-500 text-white text-[8px] px-2 py-1 rounded-bl-lg font-bold shadow-sm z-10">
+                        ${item.assetInfo || "-"}
+                    </div>
+                    
+                    <img src="${item.img}" class="card-img" onerror="this.src='https://placehold.co/200x200?text=No+Image'">
+                    <div class="badge-reserve">${item.qty} ชิ้น</div>
+                </div>
+                <div class="p-2 text-center">
+                    <h3 class="font-bold text-[10px] truncate text-gray-800">${item.title}</h3>
+                </div>
+            `;
         } else {
-card.innerHTML = `
-    <div class="image-container w-20 h-20 flex-shrink-0">
-        <div class="badge-box">
-            <i class="fas fa-box"></i> ${item.category}
-        </div>
-        <img src="${item.img}" class="w-full h-full object-cover rounded-lg" onerror="this.src='https://placehold.co/200x200?text=No+Image'">
-    </div>
-    
-    <div class="flex-1 flex flex-col justify-center">
-        <h3 class="font-bold text-sm text-gray-800">${item.title}</h3>
-        <p class="text-xs text-gray-500 mt-1">คงเหลือ: ${item.qty} ชิ้น</p>
-    </div>
-`;
+            card.innerHTML = `
+                <div class="image-container w-20 h-20 flex-shrink-0 relative">
+                    <div class="badge-box">
+                        <i class="fas fa-box"></i> ${item.category}
+                    </div>
+
+                    <div class="absolute top-0 right-0 bg-orange-500 text-white text-[7px] px-1.5 py-0.5 rounded-bl-md font-bold z-10">
+                        ${item.assetInfo || "-"}
+                    </div>
+
+                    <img src="${item.img}" class="w-full h-full object-cover rounded-lg" onerror="this.src='https://placehold.co/200x200?text=No+Image'">
+                </div>
+                
+                <div class="flex-1 flex flex-col justify-center">
+                    <h3 class="font-bold text-sm text-gray-800">${item.title}</h3>
+                    <p class="text-xs text-gray-500 mt-1">คงเหลือ: ${item.qty} ชิ้น</p>
+                </div>
+            `;
         }
         container.appendChild(card);
     });
