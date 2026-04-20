@@ -559,36 +559,46 @@ function toggleEditMode(isEdit) {
     document.getElementById('actionButtons').classList.toggle('hidden', isEdit);
     
     if (isEdit) {
-        // ดึงชื่อเดิม
-        document.getElementById('editNameInput').value = currentItemData.title;
+        // ดึงชื่อเดิมมาใส่ในช่อง Input
+        const nameInput = document.getElementById('editNameInput');
+        if (nameInput) nameInput.value = currentItemData.title;
         
-        // ดึงรายละเอียดเดิม (ใช้ ID ใหม่ที่เราเพิ่งเพิ่มใน HTML)
-        if(document.getElementById('editDescInput')) {
-            document.getElementById('editDescInput').value = currentItemData.desc || "";
-        }
+        // ดึงรายละเอียดเดิม
+        const descInput = document.getElementById('editDescInput');
+        if (descInput) descInput.value = currentItemData.desc || "";
 
-        // ดึงข้อมูล Asset Info (ถ้ามี)
-        if(document.getElementById('editAssetInfoInput')) {
-            document.getElementById('editAssetInfoInput').value = currentItemData.assetInfo;
-        }
+        // ดึง Asset Info (ถ้ามีช่อง input นี้ใน HTML)
+        const assetInput = document.getElementById('editAssetInfoInput');
+        if (assetInput) assetInput.value = currentItemData.assetInfo || "";
+        
+        // รีเซ็ตตัวเลือกไฟล์
+        const fileInput = document.getElementById('editImgFile');
+        if (fileInput) fileInput.value = ""; 
         
         const fileDisplay = document.getElementById('fileNameDisplay');
         if (fileDisplay) fileDisplay.innerText = "เลือกรูปใหม่";
+    } else {
+        // หากกดยกเลิก ให้คืนค่ารูปใน Modal กลับเป็นรูปเดิมของรายการนั้น
+        document.getElementById('modalImg').src = currentItemData.img;
     }
 }
 async function saveEdit() {
-    const newName = document.getElementById('editNameInput').value;
-    const newDesc = document.getElementById('editDescInput').value; // ดึงค่ารายละเอียดใหม่
-    const newAssetInfo = document.getElementById('editAssetInfoInput') ? document.getElementById('editAssetInfoInput').value : "";
+    const nameInput = document.getElementById('editNameInput');
+    const descInput = document.getElementById('editDescInput');
+    const assetInput = document.getElementById('editAssetInfoInput');
     const fileInput = document.getElementById('editImgFile');
-    const file = fileInput.files[0];
 
-    if (!newName) return alert("กรุณาใส่ชื่ออุปกรณ์");
+    if (!nameInput || !nameInput.value) return alert("กรุณาใส่ชื่ออุปกรณ์");
+
+    // ตรวจสอบค่าที่จะส่งไปใน Console (กด F12 ดูได้)
+    console.log("กำลังบันทึกรายการ ID:", currentItemData.id);
+    console.log("ชื่อใหม่:", nameInput.value);
 
     showToast("กำลังบันทึกข้อมูล...", 0); 
     
     let base64Data = "";
     let fileName = "";
+    const file = fileInput ? fileInput.files[0] : null;
 
     try {
         if (file) {
@@ -599,9 +609,9 @@ async function saveEdit() {
         const payload = {
             action: "updateItemFull",
             id: currentItemData.id,
-            name: newName,
-            assetInfo: newAssetInfo,
-            remark: newDesc, // ส่งค่ารายละเอียด (Remark) ไปยัง Apps Script
+            name: nameInput.value,
+            assetInfo: assetInput ? assetInput.value : currentItemData.assetInfo,
+            remark: descInput ? descInput.value : "", 
             imageDate: base64Data, 
             imageName: fileName
         };
@@ -615,9 +625,13 @@ async function saveEdit() {
 
         if (resultText.toLowerCase().includes("success")) {
             showToast("✅ อัปเดตข้อมูลเรียบร้อยแล้ว", 2000);
+            
+            // ปิดโหมดแก้ไขและ Modal
             toggleEditMode(false);
             closeModal();
-            loadData(); 
+            
+            // โหลดข้อมูลใหม่เพื่อให้หน้าแสดงผลเป็นปัจจุบัน
+            await loadData(); 
         } else {
             hideToast(); 
             alert("บันทึกไม่สำเร็จ: " + resultText);
