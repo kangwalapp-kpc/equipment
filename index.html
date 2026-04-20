@@ -119,6 +119,41 @@
     gap: 3px;
     box-shadow: 0 2px 5px rgba(0,0,0,0.2);
 }
+      /* เพิ่มระยะเว้นช่วงล่างให้ Modal ดูโปร่งขึ้น */
+.modal-content-wrapper {
+    padding-bottom: 2.5rem; /* เพิ่มระยะห่างด้านล่าง */
+}
+/* เพิ่มระยะ Safe Area สำหรับมือถือรุ่นใหม่ */
+#detailModal .p-8 {
+    padding-bottom: calc(2.5rem + env(safe-area-inset-bottom));
+}
+
+/* ปรับความนุ่มนวลของเงา */
+.shadow-blue-200 {
+    box-shadow: 0 10px 25px -5px rgba(37, 99, 235, 0.2);
+}
+
+.shadow-green-100 {
+    box-shadow: 0 10px 25px -5px rgba(34, 197, 94, 0.15);
+}
+
+/* ปรับ Scrollbar ของ Modal ให้ดูสะอาด */
+.overflow-y-auto::-webkit-scrollbar {
+    width: 0px;
+}
+      
+/* ปรับให้ปุ่มมีระยะห่างจากขอบมากขึ้น */
+#actionButtons {
+    margin-top: 1.5rem;
+    padding-bottom: 1rem;
+}
+
+/* ปรับปรุง Delete Button ให้ดูเบาลง ไม่แย่งสายตามากเกินไป */
+#deleteContainer {
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+    border-top: 1px solid #f3f4f6;
+}
 
 /* ปรับ CSS ของ badge-reserve (คงเหลือ) ให้ดูสมดุลขึ้น */
 .badge-reserve {
@@ -205,70 +240,107 @@
         ✅ บันทึกข้อมูลเรียบร้อยแล้ว
     </div>
 
-    <div id="detailModal" onclick="checkClose(event)" class="fixed inset-0 bg-black/80 z-[150] flex items-center justify-center p-4 hidden">
-        <div onclick="event.stopPropagation()" class="bg-white rounded-3xl w-full max-w-sm max-h-[90vh] overflow-hidden shadow-2xl relative animate-fadeIn">
-            <button onclick="closeModal()" class="absolute top-4 right-4 z-20 bg-white/80 rounded-full w-8 h-8 flex items-center justify-center shadow-md"><i class="fas fa-times"></i></button>
-            <img id="modalImg" src="" class="w-full h-60 object-cover">
-            <div class="p-6">
-                <div id="viewMode">
-                    <h2 id="modalTitle" class="font-bold text-2xl text-gray-900"></h2>
-                    <div class="mt-1 flex items-center gap-1 mb-2">
-                        <span class="bg-blue-100 text-blue-700 text-xs font-bold px-2 py-1 rounded-lg">
-                            <i class="fas fa-box"></i> กล่องหมายเลข: <span id="modalCategory"></span>
-                        </span>
-                    </div>
-                    <div id="modalDesc" class="text-sm text-gray-600 mt-2 mb-4"></div>
+<div id="detailModal" onclick="checkClose(event)" class="fixed inset-0 bg-black/80 z-[150] flex items-center justify-center p-4 hidden">
+    <div onclick="event.stopPropagation()" class="bg-white rounded-[2.5rem] w-full max-w-sm max-h-[95vh] overflow-y-auto shadow-2xl relative animate-fadeIn">
+        
+        <button onclick="closeModal()" class="absolute top-4 right-4 z-20 bg-white/90 backdrop-blur-sm rounded-full w-10 h-10 flex items-center justify-center shadow-md text-gray-500 active:scale-90 transition-transform">
+            <i class="fas fa-times"></i>
+        </button>
+
+        <img id="modalImg" src="" class="w-full h-64 object-cover">
+
+        <div class="p-8 pb-12"> <div id="viewMode">
+                <div class="mb-6">
+                    <span class="inline-block bg-blue-50 text-blue-600 text-[10px] font-black px-3 py-1 rounded-full mb-2 uppercase tracking-wider">
+                        <i class="fas fa-box mr-1"></i> กล่องหมายเลข: <span id="modalCategory"></span>
+                    </span>
+                    <h2 id="modalTitle" class="font-bold text-2xl text-gray-900 leading-tight"></h2>
+                    <div id="modalDesc" class="text-sm text-gray-500 mt-2 leading-relaxed"></div>
                 </div>
 
-                <div id="editMode" class="hidden animate-fadeIn mb-4">
-    <h3 class="text-orange-600 font-bold mb-3"><i class="fas fa-edit"></i> แก้ไขข้อมูล</h3>
-    
-    <label class="text-[10px] text-gray-400 uppercase font-bold">ชื่ออุปกรณ์</label>
-    <input type="text" id="editNameInput" class="w-full border-b-2 border-orange-200 py-2 mb-4 outline-none focus:border-orange-500 font-bold text-lg transition-all">
-    
-    <label class="text-[10px] text-gray-400 uppercase font-bold">รายละเอียดเพิ่มเติม</label>
-    <textarea id="editDescInput" rows="3" class="w-full border-2 border-orange-100 rounded-xl p-2 mb-4 outline-none focus:border-orange-500 text-sm transition-all resize-none" placeholder="ระบุรายละเอียด..."></textarea>
-
-    <label class="text-[10px] text-gray-400 uppercase font-bold">รูปภาพอุปกรณ์</label>
-    <div class="flex items-center gap-2 mb-4 mt-1">
-        <label class="flex-1 flex items-center justify-center gap-2 bg-gray-100 text-gray-600 py-3 rounded-xl cursor-pointer hover:bg-gray-200 transition-all border-2 border-dashed border-gray-300">
-            <i class="fas fa-camera"></i>
-            <span id="fileNameDisplay" class="text-xs font-bold">เลือกรูปใหม่</span>
-            <input type="file" id="editImgFile" accept="image/*" class="hidden" onchange="previewFileName(this)">
-        </label>
-      <div class="flex gap-2">
-                        <button onclick="saveEdit()" class="flex-1 bg-orange-500 text-white py-2 rounded-xl font-bold">บันทึก</button>
-                        <button onclick="toggleEditMode(false)" class="flex-1 bg-gray-100 text-gray-500 py-2 rounded-xl">ยกเลิก</button>
-    </div>
-</div>          
-                    </div>
-                </div>
-                <div id="stockControl" class="flex items-center justify-between bg-gray-50 p-4 rounded-2xl mb-6">
+                <div id="stockControl" class="flex items-center justify-between bg-gray-50 p-5 rounded-[2rem] mb-8 border border-gray-100">
                     <div>
-                        <span class="text-xs text-gray-500 block">คงเหลือ</span>
-                        <span id="stockQty" class="text-xl font-bold text-blue-600">0</span> <span class="text-xs text-gray-500">ชิ้น</span>
+                        <span class="text-[10px] text-gray-400 uppercase font-black block mb-1">คงเหลือ</span>
+                        <div class="flex items-baseline gap-1">
+                            <span id="stockQty" class="text-3xl font-black text-blue-600">0</span>
+                            <span class="text-xs text-gray-400 font-bold">ชิ้น</span>
+                        </div>
                     </div>
-                    <div class="flex items-center gap-3 bg-white p-1 rounded-xl shadow-sm border border-gray-100">
-                        <button onclick="updateQty(-1)" class="w-8 h-8 rounded-lg bg-gray-50 text-blue-600"><i class="fas fa-minus text-xs"></i></button>
-                        <span id="orderQty" class="w-8 text-center font-bold">1</span>
-                        <button onclick="updateQty(1)" class="w-8 h-8 rounded-lg bg-gray-50 text-blue-600"><i class="fas fa-plus text-xs"></i></button>
+                    <div class="flex items-center gap-3 bg-white p-1.5 rounded-2xl shadow-sm border border-gray-100">
+                        <button onclick="updateQty(-1)" class="w-9 h-9 rounded-xl bg-gray-50 text-blue-600 active:scale-90 transition-transform">
+                            <i class="fas fa-minus text-xs"></i>
+                        </button>
+                        <span id="orderQty" class="w-8 text-center font-bold text-lg">1</span>
+                        <button onclick="updateQty(1)" class="w-9 h-9 rounded-xl bg-gray-50 text-blue-600 active:scale-90 transition-transform">
+                            <i class="fas fa-plus text-xs"></i>
+                        </button>
                     </div>
                 </div>
 
                 <div id="actionButtons" class="flex gap-3">
-                    <button id="orderBtn" onclick="submitOrder()" class="flex-[3] bg-blue-600 text-white font-bold py-4 rounded-2xl shadow-lg">นำออก</button>
-                    <button onclick="addStock()" class="flex-1 bg-green-600 text-white font-bold py-4 rounded-2xl shadow-lg">เพิ่มเข้า</button>
-                    <button onclick="toggleEditMode(true)" class="flex-1 bg-gray-100 text-gray-400 py-4 rounded-2xl hover:bg-orange-50 hover:text-orange-500 transition-colors">
+                    <button id="orderBtn" onclick="submitOrder()" class="flex-[2.5] bg-blue-600 text-white font-bold py-4 rounded-2xl shadow-lg shadow-blue-200 active:scale-95 transition-all">
+                        นำออก
+                    </button>
+                    <button onclick="addStock()" class="flex-1 bg-green-500 text-white font-bold py-4 rounded-2xl shadow-lg shadow-green-100 active:scale-95 transition-all">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                    <button onclick="toggleEditMode(true)" class="flex-1 bg-gray-100 text-gray-400 py-4 rounded-2xl active:bg-orange-50 active:text-orange-500 transition-all">
                         <i class="fas fa-pen"></i>
                     </button>
                 </div>
 
-                <div id="deleteContainer" class="mt-4 hidden border-t pt-4">
-                    <button onclick="confirmDelete()" class="w-full text-red-500 font-bold py-2 flex items-center justify-center gap-2"><i class="fas fa-trash-alt"></i> ลบรายการนี้</button>
-                </div>
+                <div id="deleteContainer" class="mt-8 pt-4 border-t border-gray-100 hidden">
+    <button onclick="confirmDelete()" class="w-full text-red-500 hover:text-red-700 active:scale-95 text-sm font-bold py-2 flex items-center justify-center gap-2 transition-all">
+        <i class="fas fa-trash-alt"></i> ลบรายการนี้
+    </button>
+  </div>
+            </div>
+
+            <div id="editMode" class="hidden animate-fadeIn">
+    <h3 class="text-orange-600 font-bold mb-4 flex items-center gap-2">
+        <i class="fas fa-edit"></i> แก้ไขข้อมูลอุปกรณ์
+    </h3>
+    
+    <div class="space-y-5">
+        <div>
+            <label class="text-[10px] text-gray-400 uppercase font-black ml-1">ชื่ออุปกรณ์</label>
+            <input type="text" id="editNameInput" 
+                class="w-full bg-gray-50 border-2 border-transparent rounded-2xl py-3 px-4 outline-none focus:border-orange-500 focus:bg-white font-bold text-lg transition-all shadow-sm" 
+                placeholder="ระบุชื่ออุปกรณ์...">
+        </div>
+
+        <div>
+            <label class="text-[10px] text-gray-400 uppercase font-black ml-1">รายละเอียดเพิ่มเติม</label>
+            <textarea id="editDescInput" rows="3" 
+                class="w-full bg-gray-50 border-2 border-transparent rounded-2xl p-4 outline-none focus:border-orange-500 focus:bg-white text-sm transition-all resize-none shadow-sm" 
+                placeholder="ระบุรายละเอียดเพิ่มเติม..."></textarea>
+        </div>
+
+        <div>
+            <label class="text-[10px] text-gray-400 uppercase font-black ml-1">รูปภาพอุปกรณ์</label>
+            <div class="mt-1">
+                <label class="flex items-center justify-center gap-3 bg-orange-50 text-orange-600 py-4 rounded-2xl cursor-pointer border-2 border-dashed border-orange-200 hover:bg-orange-100 transition-all active:scale-[0.98]">
+                    <i class="fas fa-camera text-xl"></i>
+                    <span id="fileNameDisplay" class="font-bold text-sm">เปลี่ยนรูปภาพใหม่</span>
+                    <input type="file" id="editImgFile" accept="image/*" class="hidden" onchange="previewFileName(this)">
+                </label>
             </div>
         </div>
+
+        <div class="flex gap-3 pt-4">
+            <button onclick="saveEdit()" class="flex-[2] bg-orange-500 text-white py-4 rounded-2xl font-bold shadow-lg shadow-orange-100 active:scale-95 transition-all">
+                บันทึกการแก้ไข
+            </button>
+            <button onclick="toggleEditMode(false)" class="flex-1 bg-gray-100 text-gray-500 py-4 rounded-2xl font-bold active:scale-95 transition-all">
+                ยกเลิก
+            </button>
+        </div>
     </div>
+</div>
+
+        </div>
+    </div>
+</div>
 
     <div id="deleteConfirmModal" class="fixed inset-0 bg-black/60 z-[200] flex items-center justify-center p-4 hidden">
         <div class="bg-white rounded-3xl w-full max-w-xs p-6 shadow-2xl text-center">
@@ -463,6 +535,22 @@ function filterData(selectedCat) {
         container.appendChild(card);
     });
 }
+  function previewFileName(input) {
+    const fileDisplay = document.getElementById('fileNameDisplay');
+    if (input.files && input.files[0]) {
+        // แสดงชื่อไฟล์ที่เลือก
+        fileDisplay.innerText = input.files[0].name;
+
+        // แสดงรูปตัวอย่างทันทีใน Modal (Live Preview)
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('modalImg').src = e.target.result;
+        }
+        reader.readAsDataURL(input.files[0]);
+    } else {
+        fileDisplay.innerText = "เลือกรูปใหม่";
+    }
+}
 // แก้ไขฟังก์ชัน toggleEditMode 
 function toggleEditMode(isEdit) {
     document.getElementById('viewMode').classList.toggle('hidden', isEdit);
@@ -504,7 +592,7 @@ async function saveEdit() {
 
     try {
         if (file) {
-            base64Data = await resizeImage(file, 500); 
+            base64Data = await resizeImage(file, 400); 
             fileName = file.name;
         }
 
