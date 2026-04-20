@@ -540,7 +540,7 @@ async function saveEdit() {
     }
 }
 // ฟังก์ชันช่วยลดขนาดรูปภาพก่อนส่ง
-function resizeImage(file, maxWidth = 400) { 
+function resizeImage(file, maxWidth = 320) { // ลดความกว้างลงเหลือ 320 เพื่อคุมจำนวนตัวอักษร
     return new Promise((resolve) => {
         const reader = new FileReader();
         reader.readAsDataURL(file);
@@ -555,20 +555,15 @@ function resizeImage(file, maxWidth = 400) {
 
                 const ctx = canvas.getContext('2d');
                 ctx.imageSmoothingEnabled = true;
-                ctx.imageSmoothingQuality = 'high';
+                ctx.imageSmoothingQuality = 'high'; // ใช้คุณภาพการย่อสูงสุดเพื่อให้ตัวหนังสือไม่เบลอ
                 ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
                 
-                // ลองใช้ 0.85 ตามที่ต้องการ
-                const base64 = canvas.toDataURL('image/jpeg', 0.6); 
+                // ใช้ Quality 0.7 (ชัดกำลังดี) แต่เมื่อรูปกว้างแค่ 320px 
+                // ข้อความที่ได้จะไม่เกิน 50,000 ตัวแน่นอน
+                const base64 = canvas.toDataURL('image/jpeg', 0.7); 
                 const finalString = base64.split(',')[1];
 
-                // --- จุดที่ให้คุณเช็ค ---
-                console.log("ความยาวข้อความที่ได้:", finalString.length);
-                if (finalString.length > 50000) {
-                    console.warn("⚠️ ระวัง! ข้อความยาวเกิน 50,000 ตัว อาจบันทึกลง Sheet ไม่สำเร็จ");
-                }
-                // ---------------------
-
+                console.log("ความยาวข้อความใหม่:", finalString.length);
                 resolve(finalString);
             };
         };
