@@ -257,7 +257,10 @@
                     <h2 id="modalTitle" class="font-bold text-2xl text-gray-900 leading-tight"></h2>
                     <div id="modalDesc" class="text-sm text-gray-500 mt-2 leading-relaxed"></div>
                 </div>
-
+<div class="mt-2 flex items-center gap-2">
+    <i class="fas fa-id-card text-gray-400 text-xs"></i>
+    <span id="modalAssetInfo" class="text-xs font-bold text-orange-600"></span>
+</div>
                 <div id="stockControl" class="flex items-center justify-between bg-gray-50 p-5 rounded-[2rem] mb-8 border border-gray-100">
                     <div>
                         <span class="text-[10px] text-gray-400 uppercase font-black block mb-1">คงเหลือ</span>
@@ -308,6 +311,18 @@
                 class="w-full bg-gray-50 border-2 border-transparent rounded-2xl py-3 px-4 outline-none focus:border-orange-500 focus:bg-white font-bold text-lg transition-all shadow-sm" 
                 placeholder="ระบุชื่ออุปกรณ์...">
         </div>
+     <div>
+            <label class="text-[10px] text-gray-400 uppercase font-black ml-1">แผนก / หมายเลขทรัพย์สิน (Asset Info)</label>
+            <input type="text" id="editAssetInfoInput" 
+                class="w-full bg-gray-50 border-2 border-transparent rounded-2xl py-3 px-4 outline-none focus:border-orange-500 focus:bg-white font-bold text-lg transition-all shadow-sm" 
+                placeholder="ระบุ Section / หมายเลขทรัพย์สิน...">
+        </div>
+      <div>
+    <label class="text-[10px] text-gray-400 uppercase font-black ml-1">เลขกล่อง / หมวดหมู่</label>
+    <input type="text" id="editCategoryInput" 
+        class="w-full bg-gray-50 border-2 border-transparent rounded-2xl py-3 px-4 outline-none focus:border-orange-500 focus:bg-white font-bold text-lg transition-all shadow-sm" 
+        placeholder="ระบุเลขกล่องหรือหมวดหมู่...">
+</div>
 
         <div>
             <label class="text-[10px] text-gray-400 uppercase font-black ml-1">รายละเอียดเพิ่มเติม</label>
@@ -470,10 +485,7 @@ async function loadData() {
             img: getImageUrl(item.img), 
             category: item.category || "อื่นๆ",
             qty: Number(item.qty) || 0,
-            
-            // แก้ไขบรรทัดนี้จาก item.section เป็น item.assetInfo
             assetInfo: item.assetInfo || "-",  
-            
             desc: item.remark || "",
             id: item.id
         }));
@@ -559,40 +571,36 @@ function toggleEditMode(isEdit) {
     document.getElementById('actionButtons').classList.toggle('hidden', isEdit);
     
     if (isEdit) {
-        // ดึงชื่อเดิมมาใส่ในช่อง Input
-        const nameInput = document.getElementById('editNameInput');
-        if (nameInput) nameInput.value = currentItemData.title;
-        
-        // ดึงรายละเอียดเดิม
-        const descInput = document.getElementById('editDescInput');
-        if (descInput) descInput.value = currentItemData.desc || "";
+        // ใช้ฟังก์ชันช่วยเช็ค Element กัน Error null (กรณี ID ใน HTML ไม่ตรง)
+        const setVal = (id, val) => {
+            const el = document.getElementById(id);
+            if (el) el.value = val || "";
+        };
 
-        // ดึง Asset Info (ถ้ามีช่อง input นี้ใน HTML)
-        const assetInput = document.getElementById('editAssetInfoInput');
-        if (assetInput) assetInput.value = currentItemData.assetInfo || "";
+        setVal('editNameInput', currentItemData.title);
+        setVal('editDescInput', currentItemData.desc);
+        setVal('editCategoryInput', currentItemData.category);
         
-        // รีเซ็ตตัวเลือกไฟล์
+        // เน้นใช้ AssetInfo (คอลัมน์ E)
+        setVal('editAssetInfoInput', currentItemData.assetInfo);
+        
         const fileInput = document.getElementById('editImgFile');
         if (fileInput) fileInput.value = ""; 
         
         const fileDisplay = document.getElementById('fileNameDisplay');
         if (fileDisplay) fileDisplay.innerText = "เลือกรูปใหม่";
     } else {
-        // หากกดยกเลิก ให้คืนค่ารูปใน Modal กลับเป็นรูปเดิมของรายการนั้น
         document.getElementById('modalImg').src = currentItemData.img;
     }
 }
 async function saveEdit() {
     const nameInput = document.getElementById('editNameInput');
     const descInput = document.getElementById('editDescInput');
-    const assetInput = document.getElementById('editAssetInfoInput');
+    const catInput = document.getElementById('editCategoryInput');
+    const assetInput = document.getElementById('editAssetInfoInput'); // ดึงจากช่อง Asset
     const fileInput = document.getElementById('editImgFile');
 
     if (!nameInput || !nameInput.value) return alert("กรุณาใส่ชื่ออุปกรณ์");
-
-    // ตรวจสอบค่าที่จะส่งไปใน Console (กด F12 ดูได้)
-    console.log("กำลังบันทึกรายการ ID:", currentItemData.id);
-    console.log("ชื่อใหม่:", nameInput.value);
 
     showToast("กำลังบันทึกข้อมูล...", 0); 
     
@@ -610,7 +618,9 @@ async function saveEdit() {
             action: "updateItemFull",
             id: currentItemData.id,
             name: nameInput.value,
-            assetInfo: assetInput ? assetInput.value : currentItemData.assetInfo,
+            category: catInput ? catInput.value : currentItemData.category,
+            // ส่งแค่ assetInfo ไป (ฝั่ง Apps Script จะได้อ่านง่ายๆ)
+            assetInfo: assetInput ? assetInput.value : "", 
             remark: descInput ? descInput.value : "", 
             imageDate: base64Data, 
             imageName: fileName
@@ -625,12 +635,8 @@ async function saveEdit() {
 
         if (resultText.toLowerCase().includes("success")) {
             showToast("✅ อัปเดตข้อมูลเรียบร้อยแล้ว", 2000);
-            
-            // ปิดโหมดแก้ไขและ Modal
             toggleEditMode(false);
             closeModal();
-            
-            // โหลดข้อมูลใหม่เพื่อให้หน้าแสดงผลเป็นปัจจุบัน
             await loadData(); 
         } else {
             hideToast(); 
@@ -693,34 +699,48 @@ function openModal(id) {
     currentItemData = item;
     currentQty = 1;
 
-    // เพิ่มบรรทัดนี้เพื่อรีเซ็ต Input ไฟล์
+    // 1. จัดการรูปภาพและชื่อ
+    document.getElementById('modalImg').src = item.img;
+    document.getElementById('modalTitle').innerText = item.title;
+    document.getElementById('modalDesc').innerHTML = (item.desc || "").replace(/\n/g, '<br>');
+
+    // 2. จัดการหมวดหมู่และ AssetInfo (ลบ modalSection ทิ้ง)
+    const modalCat = document.getElementById('modalCategory');
+    if (modalCat) modalCat.innerText = item.category;
+
+    const assetDisplay = document.getElementById('modalAssetInfo');
+    if (assetDisplay) assetDisplay.innerText = item.assetInfo || "-";
+
+    // 3. จัดการจำนวนสต็อก
+    document.getElementById('orderQty').innerText = currentQty;
+    document.getElementById('stockQty').innerText = item.qty;
+
+    // 4. รีเซ็ต Input ไฟล์ (เผื่อจากคราวที่แล้ว)
     const fileInput = document.getElementById('editImgFile');
     if (fileInput) fileInput.value = ""; 
     const fileDisplay = document.getElementById('fileNameDisplay');
-    if (fileDisplay) fileDisplay.innerText = "เลือกรูปใหม่";
+    if (fileDisplay) fileDisplay.innerText = "เปลี่ยนรูปภาพใหม่";
 
-    document.getElementById('orderQty').innerText = currentQty;
-    document.getElementById('stockQty').innerText = item.qty;
-    document.getElementById('modalImg').src = item.img;
-    document.getElementById('modalTitle').innerText = item.title;
-      if(document.getElementById('modalAssetInfo')) {
-        document.getElementById('modalAssetInfo').innerText = item.assetInfo;
-    }
-    document.getElementById('modalCategory').innerText = item.category;
-    document.getElementById('modalDesc').innerHTML = (item.desc || "").replace(/\n/g, '<br>');
-
+    // 5. ปุ่มลบ (จะโชว์เฉพาะตอนของเหลือ 0)
     const deleteContainer = document.getElementById('deleteContainer');
-    deleteContainer.classList.toggle('hidden', item.qty !== 0);
+    if (deleteContainer) {
+        deleteContainer.classList.toggle('hidden', item.qty !== 0);
+    }
 
+    // 6. สถานะปุ่มนำออก
     const orderBtn = document.getElementById('orderBtn');
-    if (item.qty === 0) {
-        orderBtn.disabled = true;
-        orderBtn.classList.replace("bg-blue-600", "bg-gray-300");
-        orderBtn.innerText = "ของหมด";
-    } else {
-        orderBtn.disabled = false;
-        orderBtn.classList.replace("bg-gray-300", "bg-blue-600");
-        orderBtn.innerText = "นำออก";
+    if (orderBtn) {
+        if (item.qty <= 0) {
+            orderBtn.disabled = true;
+            orderBtn.classList.remove("bg-blue-600");
+            orderBtn.classList.add("bg-gray-300");
+            orderBtn.innerText = "ของหมด";
+        } else {
+            orderBtn.disabled = false;
+            orderBtn.classList.remove("bg-gray-300");
+            orderBtn.classList.add("bg-blue-600");
+            orderBtn.innerText = "นำออก";
+        }
     }
 
     document.getElementById('detailModal').classList.remove('hidden');
